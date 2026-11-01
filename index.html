@@ -1,0 +1,1290 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Maze Solver Quay Lui</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<style>
+/* Bố cục: bài tiểu luận một cột, thanh mục lục dính trên cùng, riêng phần "Chương trình" mở rộng thành bảng điều khiển tối giống giao diện Pygame. */
+:root{
+  --bg:#f2f5f9; --surface:#ffffff; --surface-2:#e8eef6; --ink:#0e1a2b; --ink-2:#3f5068; --ink-3:#5b6c84;
+  --line:#d3dce8; --accent:#1a68c4; --accent-ink:#ffffff; --accent-soft:#e1ecfa;
+  --ok:#0f7f55; --warn:#a85f00; --bad:#bf3340;
+  --s1:#1a68c4; --s2:#c85a06; --grid:#e0e6ef;
+  --code-bg:#0f1b2e; --code-ink:#d6e3f6; --code-dim:#7f93b2;
+  --font:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0a1223; --surface:#111d34; --surface-2:#172742; --ink:#e7f0ff; --ink-2:#b0c0d6; --ink-3:#8fa2bd;
+    --line:#2a4062; --accent:#5aa9f0; --accent-ink:#06182d; --accent-soft:#163251;
+    --ok:#3fcf94; --warn:#f0a63c; --bad:#f2727d;
+    --s1:#5aa9f0; --s2:#f0a050; --grid:#21365a;
+    --code-bg:#08111f; --code-ink:#d6e3f6; --code-dim:#7a8fb0; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0a1223; --surface:#111d34; --surface-2:#172742; --ink:#e7f0ff; --ink-2:#b0c0d6; --ink-3:#8fa2bd;
+  --line:#2a4062; --accent:#5aa9f0; --accent-ink:#06182d; --accent-soft:#163251;
+  --ok:#3fcf94; --warn:#f0a63c; --bad:#f2727d;
+  --s1:#5aa9f0; --s2:#f0a050; --grid:#21365a;
+  --code-bg:#08111f; --code-ink:#d6e3f6; --code-dim:#7a8fb0; color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.75 var(--font);-webkit-text-size-adjust:100%}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--surface)}
+.in{width:100%;max-width:1040px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.in.wide{max-width:1240px}
+h1,h2,h3{text-wrap:balance;line-height:1.2;margin:0}
+a{color:var(--accent)}
+code,.mono{font-family:var(--mono)}
+p{margin:0 0 1em;max-width:70ch}
+ul,ol{margin:0 0 1em;padding-left:1.3em;max-width:70ch}
+li{margin-bottom:.35em}
+.num{font-variant-numeric:tabular-nums}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* thanh mục lục */
+.nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--surface);border-bottom:1px solid var(--line)}
+.nav .in{display:flex;align-items:center;gap:20px;height:52px}
+.brand{font:700 14px/1 var(--font);letter-spacing:.04em;white-space:nowrap;color:var(--ink);text-decoration:none}
+.brand b{color:var(--accent)}
+.navlinks{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;min-width:0}
+.navlinks::-webkit-scrollbar{display:none}
+.navlinks a{padding:8px 11px;border-radius:8px;color:var(--ink-2);text-decoration:none;font-size:14px;font-weight:500;white-space:nowrap}
+.navlinks a:hover{background:var(--surface-2);color:var(--ink)}
+
+/* mở đầu */
+.hero{padding-block:56px 40px}
+.hero .in{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:48px;align-items:center}
+.eyebrow{font:700 12.5px/1 var(--font);letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:18px}
+.hero h1{font-size:clamp(32px,5.2vw,54px);font-weight:800;letter-spacing:-.02em;margin-bottom:20px}
+.hero h1 em{font-style:normal;color:var(--accent)}
+.lead{font-size:18px;line-height:1.7;color:var(--ink-2);max-width:56ch}
+.cta{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px}
+.btn{font:600 14.5px/1 var(--font);padding:13px 18px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{filter:brightness(1.07)}
+.facts{display:flex;flex-wrap:wrap;gap:8px 22px;margin:30px 0 0;padding:0;list-style:none;font:500 14px/1.4 var(--font);color:var(--ink-2)}
+.facts li{margin:0;display:flex;gap:8px;align-items:baseline}
+.facts b{color:var(--ink);font-weight:700}
+.heroboard{background:#0d182c;border-radius:16px;padding:14px;border:1px solid var(--line);box-shadow:0 18px 40px -22px rgba(8,20,40,.5)}
+.heroboard canvas{display:block;width:100%}
+.heroboard .cap{display:flex;justify-content:space-between;gap:10px;margin:10px 2px 0;font:500 12px/1.3 var(--font);color:#8fa5c6}
+
+/* nội dung tiểu luận */
+section.ch{padding-block:44px 8px;scroll-margin-top:60px}
+.chn{font:700 12.5px/1 var(--font);letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:10px}
+h2{font-size:clamp(25px,3.4vw,34px);font-weight:750;letter-spacing:-.01em;margin-bottom:22px}
+h3{font-size:19px;font-weight:700;margin:34px 0 12px}
+h3 .k{font-family:var(--mono);color:var(--accent);font-weight:600;margin-right:8px}
+.note{border-left:3px solid var(--accent);background:var(--accent-soft);padding:14px 18px;border-radius:0 10px 10px 0;margin:0 0 1.2em;max-width:70ch;font-size:15.5px}
+.note p:last-child{margin:0}
+.formula{font:500 15.5px/1.6 var(--mono);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 16px;margin:0 0 1.2em;max-width:70ch;overflow-x:auto}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface);margin:0 0 1.4em}
+table{border-collapse:collapse;width:100%;font-size:14.5px}
+th,td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:700 11.5px/1.3 var(--font);letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);background:var(--surface-2);white-space:nowrap}
+tr:last-child td{border-bottom:0}
+td.r,th.r{text-align:right;font-variant-numeric:tabular-nums}
+#sampleTable td:first-child,#benchTable td:first-child,#pureTable td:first-child{white-space:nowrap}
+td.m{font-family:var(--mono);font-size:13.5px}
+.pill{display:inline-block;padding:2px 9px;border-radius:99px;font:600 12px/1.5 var(--font);white-space:nowrap}
+.pill.ok{background:color-mix(in srgb,var(--ok) 16%,transparent);color:var(--ok)}
+.pill.bad{background:color-mix(in srgb,var(--bad) 16%,transparent);color:var(--bad)}
+.pill.warn{background:color-mix(in srgb,var(--warn) 16%,transparent);color:var(--warn)}
+pre.code{background:var(--code-bg);color:var(--code-ink);border-radius:12px;padding:16px 18px;overflow-x:auto;font:400 13.5px/1.65 var(--mono);margin:0 0 1.3em;tab-size:4}
+pre.code .c{color:var(--code-dim)}
+pre.code .k{color:#7cc4ff}
+details{margin:0 0 1.3em;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+details>summary{cursor:pointer;padding:12px 16px;font-weight:600;font-size:15px;list-style:none;display:flex;justify-content:space-between;gap:12px}
+details>summary::-webkit-details-marker{display:none}
+details>summary::after{content:"+";font-family:var(--mono);color:var(--accent)}
+details[open]>summary::after{content:"–"}
+details>.dbody{padding:0 16px 16px}
+details pre.code{margin-bottom:0}
+.two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;align-items:start}
+.two>*{min-width:0}
+.fig{margin:0 0 1.4em}
+.fig figcaption{font-size:13.5px;color:var(--ink-3);margin-top:8px;max-width:70ch}
+.mermaidbox{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;overflow-x:auto;margin:0 0 .6em}
+.mermaidbox pre.mermaid{margin:0;display:flex;justify-content:center}
+
+/* phòng thí nghiệm */
+.labband{background:var(--surface-2);margin-top:40px;padding-block:44px 48px;border-block:1px solid var(--line);scroll-margin-top:52px}
+.lab{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:20px;align-items:start}
+.lab>*{min-width:0}
+.panel{background:#111d34;color:#e7f0ff;border:1px solid #2b4162;border-radius:16px}
+.panel .hd{font:700 12px/1 var(--font);letter-spacing:.09em;text-transform:uppercase;color:#6fb8f0;margin-bottom:12px}
+.stage{padding:16px}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.tb{font:600 13px/1 var(--font);padding:10px 14px;border-radius:9px;border:1px solid #2b4162;background:#192a46;color:#e7f0ff;cursor:pointer}
+.tb:hover{background:#21385c}
+.tb.on{background:#3aaae6;border-color:#3aaae6;color:#06182d}
+.tb.go{background:#3aaae6;border-color:#3aaae6;color:#06182d}
+.tb.go:hover{background:#56bcf2}
+.tb:disabled{opacity:.45;cursor:default}
+.opts{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;margin-bottom:14px;font-size:13px;color:#a8bad4}
+.opts label{display:flex;align-items:center;gap:8px}
+.opts select{font:500 13px var(--font);background:#192a46;color:#e7f0ff;border:1px solid #2b4162;border-radius:8px;padding:8px 10px;max-width:100%}
+.opts input[type=range]{width:120px;accent-color:#3aaae6}
+.seg{display:inline-flex;border:1px solid #2b4162;border-radius:9px;overflow:hidden}
+.seg button{font:600 12.5px/1 var(--font);padding:9px 11px;background:#192a46;color:#c3d2e6;border:0;border-right:1px solid #2b4162;cursor:pointer}
+.seg button:last-child{border-right:0}
+.seg button.on{background:#3aaae6;color:#06182d}
+.board{background:#0d182c;border-radius:12px;padding:12px;display:flex;justify-content:center;border:1px solid #1d3050}
+.board canvas{display:block;touch-action:none;max-width:100%}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;margin:12px 2px 0;font-size:12.5px;color:#a8bad4}
+.legend span{display:inline-flex;align-items:center;gap:7px}
+.legend i{width:13px;height:13px;border-radius:3px;display:inline-block}
+.status{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px 14px;margin-top:12px;padding:11px 14px;border-radius:10px;background:#0d182c;border:1px solid #1d3050;font:500 13.5px/1.4 var(--font);min-height:44px}
+.status .res.ok{color:#3fcf94}.status .res.bad{color:#f2727d}
+.side{display:flex;flex-direction:column;gap:14px}
+.card{padding:16px}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:12px 14px;margin:0}
+.stats div{min-width:0}
+.stats dt{font-size:12px;color:#8fa5c6;margin:0 0 2px}
+.stats dd{margin:0;font:600 20px/1.2 var(--mono);font-variant-numeric:tabular-nums}
+.meter{margin-top:14px}
+.meter .bar{height:8px;border-radius:8px;background:#1d3050;overflow:hidden}
+.meter .bar i{display:block;height:100%;width:0;background:#3aaae6;border-radius:8px}
+.meter .lbl{display:flex;justify-content:space-between;font:500 12px var(--font);color:#8fa5c6;margin-top:6px}
+.stackview{display:flex;flex-direction:column;gap:5px;min-height:60px}
+.stackview .it{display:flex;justify-content:space-between;gap:10px;padding:7px 11px;border-radius:7px;background:#192a46;font:500 13px/1.2 var(--mono);color:#a8bad4}
+.stackview .it.top{background:#3aaae6;color:#06182d;font-weight:700}
+.stackview .more{font:500 12px var(--font);color:#8fa5c6;padding:2px 4px}
+.stackview .empty{color:#f2727d;font:500 13px var(--font)}
+.pseudo{margin:0;padding:0;list-style:none;font:400 12.8px/1.5 var(--mono);color:#a8bad4}
+.pseudo li{margin:0;padding:3px 8px;border-radius:6px;white-space:pre;overflow-x:auto;scrollbar-width:none}
+.pseudo li.hl{background:#3aaae6;color:#06182d;font-weight:700}
+.log{margin:0;padding:0;list-style:none;font:400 12.5px/1.45 var(--font);color:#a8bad4;min-height:130px}
+.log li{margin:0;padding:3px 0;display:flex;gap:10px;border-bottom:1px dashed #22385a}
+.log li b{color:#6c82a3;font-weight:500;min-width:42px;text-align:right}
+.log li.pop{color:#f0a0a8}.log li.move{color:#8fd8b4}.log li.goal{color:#ffd352}
+.hint{font-size:13.5px;color:var(--ink-3);margin:14px 2px 0;max-width:80ch}
+
+/* thẻ dữ liệu mẫu */
+.samples{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin:0 0 1.6em}
+.sample{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.sample .thumb{background:#0d182c;border-radius:10px;padding:8px;display:flex;justify-content:center;align-items:center;aspect-ratio:1.25;overflow:hidden}
+.sample canvas{display:block;max-width:100%;max-height:100%}
+.sample h4{margin:0;font-size:15px;line-height:1.35}
+.sample .meta{font:500 12.5px/1.5 var(--font);color:var(--ink-3)}
+.sample .btn{padding:9px 12px;font-size:13px;align-self:flex-start;margin-top:auto}
+
+/* biểu đồ */
+.chartbox{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 16px 12px;margin:0 0 1em;position:relative}
+.chartbox h4{margin:0 0 4px;font-size:15px}
+.chartbox .sub{font-size:13px;color:var(--ink-3);margin:0 0 10px;max-width:none}
+.cleg{display:flex;flex-wrap:wrap;gap:6px 18px;margin:0 0 6px;font-size:13px;color:var(--ink-2)}
+.cleg span{display:inline-flex;align-items:center;gap:8px}
+.cleg i{width:22px;height:0;border-top:3px solid var(--s1);display:inline-block}
+.cleg i.d{border-top-style:dashed;border-top-color:var(--ink-3)}
+.chartbox svg{display:block;width:100%;height:auto;overflow:visible}
+.chartbox svg text{fill:var(--ink-2);font:500 12px var(--font);font-variant-numeric:tabular-nums}
+.tip{position:absolute;pointer-events:none;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:9px 12px;font-size:12.5px;line-height:1.5;box-shadow:0 8px 24px -10px rgba(0,0,0,.35);z-index:5;min-width:170px;opacity:0;transition:opacity .08s}
+.tip b{display:block;font-family:var(--mono);margin-bottom:3px}
+.tip .row{display:flex;justify-content:space-between;gap:14px}
+.tip .sw{display:inline-block;width:10px;height:3px;margin-right:7px;vertical-align:middle}
+.runbtn{margin:0 0 1em}
+
+footer{margin-top:56px;padding-block:28px 56px;border-top:1px solid var(--line);color:var(--ink-3);font-size:14px}
+footer .in{display:flex;flex-wrap:wrap;gap:8px 24px;justify-content:space-between}
+.refs{padding-left:1.4em}
+.refs li{margin-bottom:.6em;font-size:15px}
+
+@media (max-width:1080px){
+  .lab{grid-template-columns:minmax(0,1fr)}
+  .side{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:820px){
+  .hero .in{grid-template-columns:minmax(0,1fr);gap:30px}
+  .samples{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .two{grid-template-columns:minmax(0,1fr)}
+  .brand span{display:none}
+}
+@media (max-width:560px){
+  .side{grid-template-columns:minmax(0,1fr)}
+  .samples{grid-template-columns:minmax(0,1fr)}
+  .hero{padding-block:36px 24px}
+  .stage{padding:12px}
+  .tb{padding:10px 11px}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
+
+</head>
+<body>
+<header class="nav">
+  <div class="in">
+    <a class="brand" href="#top">MAZE<b>·</b>SOLVER<span> / Đề tài 49</span></a>
+    <nav class="navlinks" aria-label="Mục lục">
+      <a href="#ly-thuyet">Lý thuyết</a>
+      <a href="#bai-toan">Bài toán</a>
+      <a href="#thuat-toan">Thuật toán</a>
+      <a href="#do-phuc-tap">Độ phức tạp</a>
+      <a href="#chuong-trinh">Chương trình</a>
+      <a href="#thuc-nghiem">Thực nghiệm</a>
+      <a href="#ket-luan">Kết luận</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+<div class="hero">
+  <div class="in">
+    <div>
+      <div class="eyebrow">Đề tài 49 · Kỹ thuật lập trình nâng cao</div>
+      <h1>Tìm đường thoát mê cung bằng <em>Quay lui</em> và <em>Stack</em></h1>
+      <p class="lead">Tiểu luận trình bày cơ sở lý thuyết, phân tích bài toán và đánh giá độ phức tạp của thuật toán quay lui dùng ngăn xếp tường minh. Chương trình mô phỏng chạy ngay trong trang, kèm kết quả thực nghiệm trên dữ liệu mẫu.</p>
+      <div class="cta">
+        <a class="btn primary" href="#chuong-trinh">Chạy mô phỏng</a>
+        <a class="btn" href="#thuc-nghiem">Xem kết quả thực nghiệm</a>
+      </div>
+      <ul class="facts">
+        <li><b>O(R·C)</b> thời gian</li>
+        <li><b>O(R·C)</b> bộ nhớ</li>
+        <li><b>≤ 5V + 1</b> bước</li>
+        <li><b>Đầy đủ</b> có đường là tìm ra</li>
+      </ul>
+    </div>
+    <div class="heroboard" aria-hidden="true">
+      <canvas id="heroCanvas"></canvas>
+      <div class="cap"><span id="heroCap">Đang dò đường…</span><span>Mê cung hoàn hảo 15×15</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 1 ============ -->
+<section class="ch" id="gioi-thieu">
+  <div class="in">
+    <div class="chn">Chương 1</div>
+    <h2>Đặt vấn đề và mục tiêu</h2>
+    <p>Tìm lối ra khỏi mê cung là một bài toán kinh điển của khoa học máy tính. Cùng một mô hình xuất hiện khi robot dò đường trong căn phòng có vật cản, khi trò chơi tìm lối đi cho nhân vật, hay khi kiểm tra hai điểm trên một bản đồ lưới có nối được với nhau hay không.</p>
+    <p>Đề tài giải bài toán này bằng <b>quay lui</b> (backtracking), cài đặt <b>không đệ quy</b> với một <b>Stack</b> tường minh. Bài viết có bốn mục tiêu:</p>
+    <ul>
+      <li>Nắm vững cấu trúc dữ liệu Stack (LIFO) và vai trò của nó trong quay lui.</li>
+      <li>Mô hình hóa mê cung thành ma trận và đồ thị, xác định rõ trạng thái, ràng buộc, điều kiện dừng.</li>
+      <li>Cài đặt thuật toán hoàn chỉnh kèm giao diện trực quan, theo dõi được từng thao tác trên Stack.</li>
+      <li>Đánh giá độ phức tạp bằng lập luận và kiểm chứng bằng thực nghiệm.</li>
+    </ul>
+    <div class="note"><p><b>Phạm vi.</b> Mê cung là lưới chữ nhật R hàng, C cột. Mỗi ô là đường đi (0) hoặc tường (1). Chỉ di chuyển theo bốn hướng, điểm xuất phát S = (0, 0), đích E = (R−1, C−1).</p></div>
+  </div>
+</section>
+
+<!-- ============ 2 ============ -->
+<section class="ch" id="ly-thuyet">
+  <div class="in">
+    <div class="chn">Chương 2</div>
+    <h2>Cơ sở lý thuyết</h2>
+
+    <h3><span class="k">2.1</span>Mê cung là một đồ thị</h3>
+    <p>Mỗi ô trống là một <b>đỉnh</b>. Hai ô trống chung cạnh được nối bằng một <b>cạnh</b> vô hướng. Ta được đồ thị G = (V, E) với |V| ≤ R·C và |E| ≤ 2·R·C. Tìm đường thoát khi đó là tìm một đường đi từ đỉnh S đến đỉnh E.</p>
+    <p>Mê cung <i>hoàn hảo</i> là đồ thị không có chu trình (một cây khung): giữa hai ô bất kỳ chỉ có đúng một đường. Mê cung có nhiều lối rẽ và vòng lặp thì có nhiều đường đi khác nhau, và thuật toán phải chọn một trong số đó.</p>
+
+    <h3><span class="k">2.2</span>Ngăn xếp (Stack)</h3>
+    <p>Stack là danh sách mà việc thêm và lấy phần tử chỉ diễn ra ở một đầu, gọi là đỉnh. Phần tử vào sau được lấy ra trước, nên Stack còn gọi là cấu trúc <b>LIFO</b> (Last In, First Out).</p>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Thao tác</th><th>Ý nghĩa</th><th>Python</th><th class="r">Chi phí</th></tr></thead>
+      <tbody>
+        <tr><td class="m">push(x)</td><td>Đặt x lên đỉnh</td><td class="m">stack.append(x)</td><td class="r">O(1)</td></tr>
+        <tr><td class="m">pop()</td><td>Lấy và bỏ phần tử ở đỉnh</td><td class="m">stack.pop()</td><td class="r">O(1)</td></tr>
+        <tr><td class="m">peek()</td><td>Xem đỉnh, không bỏ</td><td class="m">stack[-1]</td><td class="r">O(1)</td></tr>
+        <tr><td class="m">isEmpty()</td><td>Kiểm tra rỗng</td><td class="m">not stack</td><td class="r">O(1)</td></tr>
+      </tbody></table></div>
+    <p>Trong bài toán mê cung, Stack giữ <b>dấu vết đường đi</b> từ S đến ô hiện tại. Đỉnh Stack là ô đang đứng. Mỗi lần <code>pop</code> tương ứng một bước lùi đúng theo lối đã đi.</p>
+
+    <h3><span class="k">2.3</span>Quay lui (Backtracking)</h3>
+    <p>Quay lui xây dựng lời giải từng bước. Ở mỗi bước, thuật toán thử một lựa chọn hợp lệ rồi đi tiếp. Khi gặp ngõ cụt, nó hủy lựa chọn gần nhất và thử lựa chọn khác. Toàn bộ quá trình là một cuộc duyệt trên <b>cây không gian trạng thái</b>, trong đó các nhánh vi phạm ràng buộc bị cắt bỏ sớm (cắt tỉa).</p>
+    <pre class="code"><span class="c"># Khung tổng quát của quay lui (dạng đệ quy)</span>
+Backtrack(trạng_thái):
+    nếu trạng_thái là lời giải: ghi nhận và dừng
+    với mỗi lựa chọn c hợp lệ:
+        áp dụng c
+        Backtrack(trạng_thái mới)
+        hoàn tác c            <span class="c"># đây là bước "quay lui"</span></pre>
+    <p>Với mê cung, lựa chọn là bốn hướng đi. Ràng buộc là ô kế tiếp phải nằm trong lưới, không phải tường và chưa được thăm.</p>
+
+    <h3><span class="k">2.4</span>Quay lui, DFS và Stack</h3>
+    <p>Quay lui trên mê cung chính là <b>duyệt theo chiều sâu</b> (DFS): đi sâu hết mức, hết đường thì lùi. Bản đệ quy dùng ngăn xếp lời gọi của hệ thống một cách ngầm định. Chương trình này thay nó bằng Stack do người lập trình quản lý, vì ba lý do:</p>
+    <ul>
+      <li><b>Giới hạn đệ quy.</b> Python mặc định cho phép khoảng 1000 tầng đệ quy. Mê cung lớn nhất của chương trình có 31×35 = 1085 ô, và một đường đi ngoằn ngoèo có thể dài hơn 1000 ô, khi đó bản đệ quy sẽ lỗi <code>RecursionError</code>.</li>
+      <li><b>Quan sát được.</b> Stack nằm trong tay người lập trình nên giao diện hiển thị được nội dung của nó ở mọi thời điểm.</li>
+      <li><b>Chạy từng bước.</b> Mỗi vòng lặp là một thao tác rời rạc, thuận tiện cho chế độ “Bước tiếp” và hoạt ảnh.</li>
+    </ul>
+    <p>Mỗi phần tử Stack là bộ ba <code>[r, c, d]</code>. Thành phần <code>d</code> là hướng kế tiếp cần thử tại ô đó. Nó đóng vai trò biến đếm vòng lặp của một lời gọi đệ quy, nhờ vậy khi quay lại một ô, thuật toán tiếp tục từ hướng chưa thử thay vì thử lại từ đầu.</p>
+  </div>
+</section>
+
+<!-- ============ 3 ============ -->
+<section class="ch" id="bai-toan">
+  <div class="in">
+    <div class="chn">Chương 3</div>
+    <h2>Phân tích bài toán</h2>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Thành phần</th><th>Đặc tả</th></tr></thead>
+      <tbody>
+        <tr><td><b>Đầu vào</b></td><td>Ma trận <code>grid</code> cỡ R×C với <code>grid[i][j] ∈ {0, 1}</code> (0 là đường, 1 là tường). Điểm đầu S = (0, 0), điểm cuối E = (R−1, C−1), cả hai là ô trống.</td></tr>
+        <tr><td><b>Đầu ra</b></td><td>Giá trị <code>found</code> (có hay không có lối thoát) và, nếu có, một đường đi từ S đến E. Đường đi chính là nội dung Stack khi thuật toán dừng.</td></tr>
+        <tr><td><b>Hướng đi</b></td><td>Thứ tự thử cố định: Lên (−1, 0), Phải (0, +1), Xuống (+1, 0), Trái (0, −1).</td></tr>
+        <tr><td><b>Trạng thái</b></td><td>Bộ ba <code>(r, c, d)</code>: vị trí hiện tại và chỉ số hướng sẽ thử tiếp, <code>d ∈ {0..4}</code>.</td></tr>
+        <tr><td><b>Ràng buộc</b></td><td>Ô kế tiếp (r′, c′) hợp lệ khi (1) 0 ≤ r′ &lt; R và 0 ≤ c′ &lt; C, (2) <code>grid[r′][c′] = 0</code>, (3) chưa được đánh dấu thăm.</td></tr>
+        <tr><td><b>Điều kiện dừng</b></td><td>Đỉnh Stack là E: thành công. Stack rỗng: thất bại, không có lối thoát.</td></tr>
+      </tbody></table></div>
+
+    <h3><span class="k">3.1</span>Tính đúng đắn của thuật toán</h3>
+    <ul>
+      <li><b>Dừng sau hữu hạn bước.</b> Mỗi ô được đưa vào Stack nhiều nhất một lần nhờ mảng <code>visited</code>, mà số ô là hữu hạn.</li>
+      <li><b>Đầy đủ.</b> Nếu có đường từ S đến E thì thuật toán tìm ra. Một ô chỉ bị lấy khỏi Stack sau khi cả bốn hướng đã được thử, nghĩa là mọi ô kề chưa thăm đều đã được đi vào. Do đó khi Stack rỗng, mọi ô đến được từ S đều đã được thăm, và E không nằm trong số đó.</li>
+      <li><b>Không tối ưu.</b> Đường tìm được là một đường đơn bất kỳ, phụ thuộc thứ tự hướng. Nó không đảm bảo ngắn nhất (mục 7.1 so sánh với BFS).</li>
+    </ul>
+    <div class="note"><p><b>Điểm mấu chốt.</b> Mảng <code>visited</code> không bao giờ được xóa khi quay lui. Một ô đã là ngõ cụt thì mọi lối đi qua nó cũng là ngõ cụt, nên không cần xét lại. Đây là điều đưa chi phí từ hàm mũ xuống tuyến tính (chương 5).</p></div>
+  </div>
+</section>
+
+<!-- ============ 4 ============ -->
+<section class="ch" id="thuat-toan">
+  <div class="in">
+    <div class="chn">Chương 4</div>
+    <h2>Thuật toán</h2>
+
+    <h3><span class="k">4.1</span>Lưu đồ</h3>
+    <div class="mermaidbox"><pre class="mermaid">
+flowchart TD
+  A["Bắt đầu: push S, đánh dấu S"] --> B{"Stack rỗng?"}
+  B -- Có --> Z["THẤT BẠI: không có lối thoát"]
+  B -- Không --> C["Lấy đỉnh (r, c, d)"]
+  C --> D{"(r, c) là E?"}
+  D -- Có --> Y["THÀNH CÔNG: Stack là đường đi"]
+  D -- Không --> F{"d = 4?"}
+  F -- Có --> G["pop: quay lui"]
+  G --> B
+  F -- Không --> H["Thử hướng d, rồi d = d + 1"]
+  H --> I{"Ô kế tiếp hợp lệ và chưa thăm?"}
+  I -- Có --> J["Đánh dấu thăm, push (r', c', 0)"]
+  J --> B
+  I -- Không --> B
+    </pre></div>
+
+    <h3><span class="k">4.2</span>Mã giả</h3>
+<pre class="code">1  push(Stack, (S, d=0));  đánh dấu S đã thăm
+2  while Stack không rỗng:
+3      (r, c, d) ← peek(Stack)
+4      if (r, c) = E:  return THÀNH CÔNG          <span class="c"># Stack = đường đi S → E</span>
+5      if d = 4:       pop(Stack)                 <span class="c"># hết hướng: quay lui</span>
+6      else:           d ← d + 1;  (r', c') ← ô kế tiếp theo hướng d cũ
+7          if (r', c') hợp lệ và chưa thăm:
+               đánh dấu thăm;  push(Stack, (r', c', 0))
+8  return THẤT BẠI</pre>
+
+    <h3><span class="k">4.3</span>Cài đặt Python</h3>
+    <p>Lớp <code>MazeSolver</code> dưới đây là mã nguồn trong tệp <code>main.py</code> của chương trình Pygame. Phương thức <code>step()</code> thực hiện đúng một dòng trong mã giả, nên giao diện có thể chạy tự động hoặc từng bước.</p>
+    <details>
+      <summary>Xem mã nguồn lớp MazeSolver (main.py)</summary>
+      <div class="dbody"><pre class="code">class MazeSolver:
+    """
+    Backtracking không đệ quy, sử dụng Stack tường minh.
+
+    Mỗi phần tử Stack là [row, col, next_direction].
+    next_direction ghi nhớ hướng tiếp theo cần thử tại ô đó.
+    Nhờ vậy khi quay lại một ô, thuật toán không thử lại hướng cũ.
+    """
+
+    DIRECTIONS = [
+        (-1, 0, "Lên"),
+        (0, 1, "Phải"),
+        (1, 0, "Xuống"),
+        (0, -1, "Trái"),
+    ]
+
+    def __init__(self, maze):
+        self.maze = maze
+        self.visited = set()
+        self.path = []
+        self.stack = []
+        self.finished = False
+        self.found = False
+        self.backtracks = 0
+        self.visited_count = 0
+        self.steps = 0
+        self.message = "Sẵn sàng tìm đường"
+        self.started_at = None
+        self.elapsed = 0.0
+
+        sr, sc = maze.start
+        self.stack.append([sr, sc, 0])
+        self.path.append((sr, sc))
+        self.visited.add((sr, sc))
+        self.visited_count = 1
+        self.started_at = time.perf_counter()
+
+    def step(self):
+        """Thực hiện đúng một thao tác của thuật toán."""
+        if self.finished:
+            return
+
+        self.steps += 1
+        current = self.stack[-1]
+        row, col, direction_index = current
+        position = (row, col)
+
+        if position == self.maze.goal:
+            self.finished = True
+            self.found = True
+            self.message = "Đã tìm thấy lối thoát!"
+            self.elapsed = time.perf_counter() - self.started_at
+            return
+
+        if direction_index &gt;= len(self.DIRECTIONS):
+            # Đã thử hết bốn hướng: quay lui.
+            self.stack.pop()
+            if self.path:
+                self.path.pop()
+            self.backtracks += 1
+
+            if not self.stack:
+                self.finished = True
+                self.found = False
+                self.message = "Không tìm thấy đường thoát."
+                self.elapsed = time.perf_counter() - self.started_at
+            else:
+                self.message = "Ngõ cụt — quay lui"
+            return
+
+        # Ghi nhận hướng này đã được thử trước khi xét ô kế tiếp.
+        dr, dc, direction_name = self.DIRECTIONS[direction_index]
+        current[2] += 1
+
+        next_row = row + dr
+        next_col = col + dc
+        next_position = (next_row, next_col)
+
+        inside = (
+            0 &lt;= next_row &lt; self.maze.rows
+            and 0 &lt;= next_col &lt; self.maze.cols
+        )
+
+        if (
+            inside
+            and self.maze.grid[next_row][next_col] == 0
+            and next_position not in self.visited
+        ):
+            self.visited.add(next_position)
+            self.visited_count += 1
+            self.stack.append([next_row, next_col, 0])
+            self.path.append(next_position)
+            self.message = f"Di chuyển: {direction_name}"
+        else:
+            self.message = f"Thử hướng {direction_name}: không hợp lệ"
+
+    def run_to_end(self):
+        """Chạy thuật toán đến khi kết thúc, có giới hạn an toàn."""
+        safety_limit = self.maze.rows * self.maze.cols * 8
+        count = 0
+        while not self.finished and count &lt; safety_limit:
+            self.step()
+            count += 1
+
+    def stack_positions(self):
+        """Trả về danh sách tọa độ hiện có trong Stack."""
+        return [(item[0], item[1]) for item in self.stack]</pre></div>
+    </details>
+
+    <h3><span class="k">4.4</span>Chạy tay trên mê cung 4×4</h3>
+    <p>Mê cung nhỏ dưới đây có một ngõ cụt ở ô (0, 3). Bảng liệt kê từng bước do chính bộ giải của trang này tạo ra.</p>
+    <div class="two">
+      <div>
+        <div class="heroboard" style="padding:10px"><canvas id="traceCanvas"></canvas></div>
+        <p style="font-size:13.5px;color:var(--ink-3);margin:8px 0 0">Ô vàng là điểm dừng cuối, hồng là ngõ cụt đã bị bỏ, xanh lá là đường thoát.</p>
+      </div>
+      <div class="tablewrap" style="max-height:340px;overflow:auto;margin:0"><table id="traceTable">
+        <thead><tr><th class="r">Bước</th><th>Thao tác</th><th>Đỉnh Stack</th><th class="r">Độ sâu</th></tr></thead>
+        <tbody></tbody></table></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 5 ============ -->
+<section class="ch" id="do-phuc-tap">
+  <div class="in">
+    <div class="chn">Chương 5</div>
+    <h2>Đánh giá độ phức tạp</h2>
+    <p>Gọi <b>V</b> là số ô trống đến được từ S (V ≤ R·C). Chi phí đo bằng số lần gọi <code>step()</code>, mỗi lần tốn thời gian O(1).</p>
+
+    <h3><span class="k">5.1</span>Độ phức tạp thời gian</h3>
+    <p>Nhờ mảng <code>visited</code>, mỗi ô được push tối đa một lần, nên cũng pop tối đa một lần. Khi ô nằm trên đỉnh Stack, nó tiêu tốn tối đa bốn bước thử hướng và một bước pop. Cộng thêm bước nhận ra đích:</p>
+    <div class="formula">T(V) ≤ 4·V + 1·V + 1 = 5V + 1 = O(V) = O(R·C)</div>
+    <ul>
+      <li><b>Tốt nhất:</b> Θ(R + C), khi lối đi gần như thẳng đến đích (mẫu 1).</li>
+      <li><b>Xấu nhất:</b> Θ(R·C), khi phải thăm gần hết các ô. Trường hợp không có lối thoát đạt đúng 5V bước, vì mọi ô đến được đều bị thử đủ bốn hướng rồi pop (mẫu 3: 36 ô đến được, 180 bước).</li>
+    </ul>
+
+    <h3><span class="k">5.2</span>Độ phức tạp không gian</h3>
+    <p>Mảng <code>visited</code> chiếm O(R·C). Stack chứa tối đa V phần tử, mỗi phần tử ba số nguyên, nên O(V). Stack sâu nhất khi mê cung là một con đường rắn dài (mẫu 2). Tổng bộ nhớ phụ là <b>O(R·C)</b>.</p>
+
+    <h3><span class="k">5.3</span>Vì sao <code>visited</code> toàn cục quyết định</h3>
+    <p>Nếu chỉ đánh dấu những ô nằm trên đường đang đi và bỏ dấu khi lùi (quay lui thuần), thuật toán sẽ duyệt <i>mọi đường đơn</i> xuất phát từ S. Số đường đơn trên lưới tăng theo hàm mũ: riêng số đường đơn nối hai góc đối diện là 1.262.816 trên lưới 6×6 ô và hơn 575 triệu trên lưới 7×7 ô (dãy A007764 trong OEIS). Chi phí lên tới O(3<sup>V</sup>) với mỗi ô có tối đa ba hướng đi tiếp. Mục 7.3 đo trực tiếp sự khác biệt này.</p>
+
+    <div class="tablewrap"><table>
+      <thead><tr><th>Thuật toán</th><th>Thời gian</th><th>Bộ nhớ</th><th>Tìm được nếu có đường</th><th>Đường ngắn nhất</th></tr></thead>
+      <tbody>
+        <tr><td><b>Quay lui + Stack</b> (visited toàn cục, đề tài này)</td><td class="m">O(R·C)</td><td class="m">O(R·C)</td><td><span class="pill ok">Có</span></td><td><span class="pill bad">Không</span></td></tr>
+        <tr><td>Quay lui thuần (chỉ đánh dấu ô trên đường đi)</td><td class="m">O(3<sup>V</sup>)</td><td class="m">O(V)</td><td><span class="pill ok">Có</span></td><td><span class="pill bad">Không</span></td></tr>
+        <tr><td>BFS (hàng đợi)</td><td class="m">O(R·C)</td><td class="m">O(R·C)</td><td><span class="pill ok">Có</span></td><td><span class="pill ok">Có</span></td></tr>
+      </tbody></table></div>
+    <p>Quay lui + Stack có cùng bậc phức tạp với BFS. Nó đổi lấy tính tối ưu của đường đi để được một Stack nhỏ gọn, phản ánh đúng cách con người “đi đến ngõ cụt rồi quay lại”.</p>
+  </div>
+</section>
+
+<!-- ============ 6 ============ -->
+<section class="labband" id="chuong-trinh">
+  <div class="in wide">
+    <div class="chn">Chương 6</div>
+    <h2>Chương trình mô phỏng</h2>
+    <p style="max-width:80ch">Bản web này dùng cùng thuật toán với chương trình Pygame. Lõi thuật toán đã được đối chiếu với lớp <code>MazeSolver</code> gốc trên 150 mê cung (có lối thoát và không có): số bước, số ô thăm, số lần quay lui, kết quả và độ dài đường đi đều trùng khớp. Bảng điều khiển có thêm vài chức năng so với bản Pygame, như hiển thị ngõ cụt, độ sâu Stack và dòng mã giả đang chạy.</p>
+
+    <div class="lab">
+      <div class="panel stage">
+        <div class="toolbar">
+          <button class="tb go" id="bRun">Chạy</button>
+          <button class="tb" id="bStep">Bước tiếp</button>
+          <button class="tb" id="bPause">Tạm dừng</button>
+          <button class="tb" id="bEnd">Chạy tới cuối</button>
+          <button class="tb" id="bReset">Đặt lại</button>
+        </div>
+        <div class="opts">
+          <label>Mê cung
+            <select id="selMaze">
+              <option value="random">Ngẫu nhiên (như bản Pygame)</option>
+              <option value="perfect">Mê cung hoàn hảo</option>
+              <option value="s1">Mẫu 1 · Đường thẳng</option>
+              <option value="s2">Mẫu 2 · Đường rắn</option>
+              <option value="s3">Mẫu 3 · Không có lối thoát</option>
+              <option value="s4" selected>Mẫu 4 · Ngẫu nhiên 17×21</option>
+              <option value="s5">Mẫu 5 · Hoàn hảo 21×21</option>
+              <option value="s6">Mẫu 6 · Ngẫu nhiên 31×35</option>
+            </select>
+          </label>
+          <button class="tb" id="bNew">Mê cung mới</button>
+          <span class="seg" role="group" aria-label="Kích thước">
+            <button id="bMinus" title="Giảm kích thước">−</button><button id="bSize" disabled style="min-width:74px;cursor:default">17×21</button><button id="bPlus" title="Tăng kích thước">+</button>
+          </span>
+        </div>
+        <div class="opts">
+          <span>Chỉnh sửa</span>
+          <span class="seg" role="group" aria-label="Công cụ vẽ">
+            <button id="tNone" class="on">Chỉ xem</button><button id="tWall">Vẽ tường</button><button id="tErase">Xóa tường</button>
+          </span>
+          <label>Tốc độ <input type="range" id="rngSpeed" min="0" max="100" value="46" aria-label="Tốc độ"> <span class="mono num" id="spdLbl" style="min-width:76px"></span></label>
+          <label style="gap:6px"><input type="checkbox" id="chkDead" checked> Hiện ngõ cụt</label>
+        </div>
+        <div class="board"><canvas id="labCanvas" role="img" aria-label="Mê cung đang được giải"></canvas></div>
+        <div class="legend">
+          <span><i style="background:#2abe87"></i>S xuất phát</span>
+          <span><i style="background:#f59d4b"></i>E đích</span>
+          <span><i style="background:#ffd352"></i>Đỉnh Stack</span>
+          <span><i style="background:#3aaae6"></i>Nằm trong Stack</span>
+          <span><i style="background:#e6b3ba"></i>Ngõ cụt đã bỏ</span>
+          <span><i style="background:#2ccd91"></i>Đường thoát</span>
+          <span><i style="background:#2f4260"></i>Tường</span>
+        </div>
+        <div class="status"><span id="stMsg">…</span><span class="res" id="stRes"></span></div>
+      </div>
+
+      <div class="side">
+        <div class="panel card">
+          <div class="hd">Thống kê</div>
+          <dl class="stats">
+            <div><dt>Số bước</dt><dd id="sSteps">0</dd></div>
+            <div><dt>Ô đã thăm</dt><dd id="sVis">0</dd></div>
+            <div><dt>Quay lui (pop)</dt><dd id="sBack">0</dd></div>
+            <div><dt>Độ sâu Stack</dt><dd id="sDepth">0</dd></div>
+          </dl>
+          <div class="meter">
+            <div class="bar"><i id="mBar"></i></div>
+            <div class="lbl"><span id="mL">bước / cận trên 5V+1</span><span id="mR"></span></div>
+          </div>
+        </div>
+        <div class="panel card">
+          <div class="hd">Stack · LIFO</div>
+          <div class="stackview" id="stackView"></div>
+        </div>
+        <div class="panel card">
+          <div class="hd">Mã giả đang chạy</div>
+          <ul class="pseudo" id="pseudo">
+            <li data-l="1">push(S);  đánh dấu S</li>
+            <li data-l="2">while Stack không rỗng:</li>
+            <li data-l="3">    (r, c, d) ← peek(Stack)</li>
+            <li data-l="4">    if (r, c) = E: THÀNH CÔNG</li>
+            <li data-l="5">    if d = 4: pop(Stack)  ⟵ quay lui</li>
+            <li data-l="6">    else: d ← d+1; xét ô kế tiếp</li>
+            <li data-l="7">        hợp lệ, chưa thăm: push(ô)</li>
+            <li data-l="8">THẤT BẠI</li>
+          </ul>
+        </div>
+        <div class="panel card">
+          <div class="hd">Nhật ký thao tác</div>
+          <ul class="log" id="logView"></ul>
+        </div>
+      </div>
+    </div>
+    <p class="hint">Gợi ý: chọn “Vẽ tường” hoặc “Xóa tường” rồi nhấp hoặc kéo trên mê cung để chỉnh sửa, sau đó bấm Chạy. Chọn Mẫu 3 và bấm “Chạy tới cuối” để thấy trường hợp xấu nhất: số bước đạt đúng 5 lần số ô thăm được.</p>
+
+    <h3 style="margin-top:40px">Cấu trúc và cách chạy bản Pygame</h3>
+    <div class="two">
+      <div class="tablewrap" style="margin:0"><table>
+        <thead><tr><th>Thành phần trong <code>main.py</code></th><th>Vai trò</th></tr></thead>
+        <tbody>
+          <tr><td class="m">Maze</td><td>Ma trận 0/1, sinh mê cung ngẫu nhiên có một lối đi bảo đảm, đổi kích thước, thêm/xóa tường.</td></tr>
+          <tr><td class="m">MazeSolver</td><td>Quay lui bằng Stack <code>[r, c, d]</code>, thống kê, hàm <code>step()</code> và <code>run_to_end()</code>.</td></tr>
+          <tr><td class="m">draw_maze, draw_stack_panel</td><td>Vẽ lưới, bảng Stack bằng Pygame.</td></tr>
+          <tr><td class="m">main()</td><td>Vòng lặp sự kiện: nút bấm, chuột, hoạt ảnh tự động.</td></tr>
+        </tbody></table></div>
+      <div>
+        <pre class="code"><span class="c"># Python 3.10+</span>
+python -m pip install -r requirements.txt
+python main.py</pre>
+        <p style="font-size:14.5px;color:var(--ink-2)">Nút trong bản Pygame: CHẠY, BƯỚC TIẾP, TẠM DỪNG, ĐẶT LẠI, MÊ CUNG MỚI, ± KÍCH THƯỚC, THÊM TƯỜNG, CHẬM HƠN, NHANH HƠN. Kích thước giới hạn từ 7×7 đến 31×35.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 7 ============ -->
+<section class="ch" id="thuc-nghiem">
+  <div class="in wide">
+    <div class="chn">Chương 7</div>
+    <h2>Thực nghiệm và kết quả</h2>
+    <p>Mọi số liệu trong chương này được tính trực tiếp trong trang bằng bộ giải ở chương 6, trên dữ liệu có hạt giống (seed) cố định nên kết quả lặp lại được. Riêng cột thời gian phụ thuộc máy của người xem.</p>
+
+    <h3><span class="k">7.1</span>Dữ liệu mẫu</h3>
+    <div class="samples" id="sampleCards"></div>
+    <div class="tablewrap"><table id="sampleTable">
+      <thead><tr>
+        <th>Mẫu</th><th>Kích thước</th><th class="r">Ô trống V</th><th>Kết quả</th><th class="r">Số bước</th><th class="r">5V+1</th><th class="r">Ô thăm</th><th class="r">Quay lui</th><th class="r">Stack sâu nhất</th><th class="r">Đường (ô)</th><th class="r">BFS ngắn nhất</th><th class="r">Thời gian</th>
+      </tr></thead><tbody></tbody></table></div>
+    <p id="sampleNote"></p>
+
+    <h3><span class="k">7.2</span>Chi phí theo kích thước mê cung</h3>
+    <p>Với mỗi kích thước n×n, bộ giải chạy trên 20 mê cung ngẫu nhiên (27% tường, như bản Pygame) và 20 mê cung hoàn hảo. Biểu đồ vẽ số bước trung bình theo số ô trống V trung bình.</p>
+    <div class="chartbox">
+      <h4>Số bước theo số ô trống</h4>
+      <p class="sub">Trung bình 20 mê cung mỗi điểm, kích thước 11×11 đến 101×101</p>
+      <div class="cleg" id="chartLegend"></div>
+      <div id="chart"></div>
+      <div class="tip" id="chartTip"></div>
+    </div>
+    <p id="chartNote"></p>
+    <details>
+      <summary>Xem dạng bảng</summary>
+      <div class="dbody"><div class="tablewrap" style="margin:0"><table id="benchTable">
+        <thead><tr><th>Kích thước</th><th class="r">Loại</th><th class="r">V (TB)</th><th class="r">Số bước (TB)</th><th class="r">Ô thăm (TB)</th><th class="r">Bước / ô thăm</th><th class="r">Bước / V</th><th class="r">Quay lui (TB)</th></tr></thead><tbody></tbody></table></div></div>
+    </details>
+
+    <h3><span class="k">7.3</span>Đối chứng: bỏ <code>visited</code> toàn cục</h3>
+    <p>Mê cung là lưới n×n hoàn toàn trống, đích bị bịt kín để thuật toán buộc phải duyệt hết. Bảng so sánh số lần đi vào một ô giữa quay lui thuần (chỉ đánh dấu ô trên đường đi) và số bước của quay lui có <code>visited</code> toàn cục.</p>
+    <div class="runbtn"><button class="btn" id="bPure">Chạy thêm lưới 6×6 và 7×7 (mất vài giây)</button></div>
+    <div class="tablewrap"><table id="pureTable">
+      <thead><tr><th>Lưới</th><th class="r">Ô trống V</th><th class="r">Quay lui + visited (bước)</th><th class="r">Quay lui thuần (lần vào ô)</th><th class="r">Chênh lệch</th></tr></thead><tbody></tbody></table></div>
+
+    <h3><span class="k">7.4</span>Nhận xét</h3>
+    <ul id="remarks"></ul>
+  </div>
+</section>
+
+<!-- ============ 8 ============ -->
+<section class="ch" id="ket-luan">
+  <div class="in">
+    <div class="chn">Chương 8</div>
+    <h2>Kết luận và hướng phát triển</h2>
+    <h3 style="margin-top:0"><span class="k">8.1</span>Kết quả đạt được</h3>
+    <ul>
+      <li>Xây dựng được chương trình hoàn chỉnh bằng Python với giao diện Pygame: chạy tự động, chạy từng bước, tạo mê cung ngẫu nhiên, chỉnh sửa tường, hiển thị thống kê và Stack.</li>
+      <li>Mô hình hóa mê cung bằng ma trận và đồ thị, nêu rõ trạng thái, ràng buộc, điều kiện dừng, tính dừng và tính đầy đủ.</li>
+      <li>Chứng minh cận trên T ≤ 5V + 1 và bộ nhớ O(R·C). Thực nghiệm khớp lý thuyết: số bước tăng tuyến tính theo V, không bao giờ vượt cận, và đạt đúng 5V khi không có lối thoát (V là số ô đến được từ S).</li>
+      <li>Đối chứng cho thấy việc giữ <code>visited</code> toàn cục làm chi phí giảm từ hàm mũ xuống tuyến tính.</li>
+    </ul>
+    <h3><span class="k">8.2</span>Hạn chế</h3>
+    <ul>
+      <li>Đường tìm được không phải đường ngắn nhất và phụ thuộc thứ tự bốn hướng.</li>
+      <li>Mê cung ngẫu nhiên của bản Pygame chỉ rải 27% tường và khoét một lối đi, nên không có cấu trúc mê cung cổ điển.</li>
+      <li>Chưa có chức năng lưu và tải mê cung ra tệp, chưa di chuyển được S và E.</li>
+    </ul>
+    <h3><span class="k">8.3</span>Hướng phát triển</h3>
+    <ul>
+      <li>Thêm BFS và A* để so sánh độ dài đường và số ô thăm với quay lui.</li>
+      <li>Thêm bộ sinh mê cung hoàn hảo (như bộ sinh dùng trong trang này) vào bản Pygame.</li>
+      <li>Lưu và tải mê cung, cho phép kéo thả S và E, xuất biểu đồ so sánh thuật toán.</li>
+      <li>Mở rộng sang di chuyển tám hướng và ô có chi phí khác nhau.</li>
+    </ul>
+
+    <h3>Tài liệu tham khảo</h3>
+    <ol class="refs">
+      <li>T. H. Cormen, C. E. Leiserson, R. L. Rivest, C. Stein. <i>Introduction to Algorithms</i>, 4th ed. MIT Press, 2022. (Duyệt đồ thị, DFS, BFS.)</li>
+      <li>R. Sedgewick, K. Wayne. <i>Algorithms</i>, 4th ed. Addison-Wesley, 2011. (Stack, DFS, bài toán mê cung.)</li>
+      <li>D. E. Knuth. <i>The Art of Computer Programming, Vol. 4B: Combinatorial Algorithms, Part 2</i>. Addison-Wesley, 2022. (Quay lui.)</li>
+      <li>S. W. Golomb, L. D. Baumert. “Backtrack Programming.” <i>Journal of the ACM</i> 12(4), 1965, tr. 516–524.</li>
+      <li>OEIS A007764: số đường đi đơn nối hai góc đối diện của lưới n×n. <a href="https://oeis.org/A007764" target="_blank" rel="noopener">oeis.org/A007764</a></li>
+      <li>Python Software Foundation. <i>Python 3 documentation</i>: cấu trúc dữ liệu <code>list</code>, <code>sys.getrecursionlimit</code>. <a href="https://docs.python.org/3/" target="_blank" rel="noopener">docs.python.org</a></li>
+      <li>Pygame community. <i>Pygame documentation</i>. <a href="https://www.pygame.org/docs/" target="_blank" rel="noopener">pygame.org/docs</a></li>
+    </ol>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="in">
+    <span>Tiểu luận Kỹ thuật lập trình nâng cao · Đề tài 49</span>
+    <span class="mono">Quay lui + Stack · Python / Pygame</span>
+  </div>
+</footer>
+
+<script>
+/* ===== LÕI THUẬT TOÁN (port 1-1 từ MazeSolver trong main.py) ===== */
+const DIRS = [[-1, 0, 'Lên'], [0, 1, 'Phải'], [1, 0, 'Xuống'], [0, -1, 'Trái']];
+
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+class Maze {
+  constructor(rows, cols, grid) {
+    this.rows = rows; this.cols = cols;
+    this.grid = grid || Array.from({ length: rows }, () => new Array(cols).fill(0));
+    this.start = [0, 0]; this.goal = [rows - 1, cols - 1];
+  }
+  clone() { return new Maze(this.rows, this.cols, this.grid.map(r => r.slice())); }
+  openCount() { let n = 0; for (const r of this.grid) for (const v of r) if (v === 0) n++; return n; }
+  /* Giống Maze.generate() của bản Pygame: 27% tường + một lối đi chắc chắn từ S đến E */
+  static random(rows, cols, rng, density = 0.27) {
+    const g = Array.from({ length: rows }, () => Array.from({ length: cols }, () => (rng() < density ? 1 : 0)));
+    let r = 0, c = 0; g[0][0] = 0;
+    while (r !== rows - 1 || c !== cols - 1) {
+      const ch = [];
+      if (r < rows - 1) ch.push([r + 1, c]);
+      if (c < cols - 1) ch.push([r, c + 1]);
+      [r, c] = ch[Math.floor(rng() * ch.length)];
+      g[r][c] = 0;
+    }
+    return new Maze(rows, cols, g);
+  }
+  /* Mê cung hoàn hảo (cây khung) sinh bằng chính Stack + quay lui; kích thước được làm lẻ */
+  static perfect(rows, cols, rng) {
+    rows |= 1; cols |= 1;
+    const g = Array.from({ length: rows }, () => new Array(cols).fill(1));
+    g[0][0] = 0; const st = [[0, 0]];
+    while (st.length) {
+      const [r, c] = st[st.length - 1];
+      const nb = [];
+      for (const [dr, dc] of DIRS) {
+        const nr = r + 2 * dr, nc = c + 2 * dc;
+        if (nr >= 0 && nc >= 0 && nr < rows && nc < cols && g[nr][nc] === 1) nb.push([nr, nc, dr, dc]);
+      }
+      if (!nb.length) { st.pop(); continue; }
+      const [nr, nc, dr, dc] = nb[Math.floor(rng() * nb.length)];
+      g[r + dr][c + dc] = 0; g[nr][nc] = 0; st.push([nr, nc]);
+    }
+    return new Maze(rows, cols, g);
+  }
+  static fromStrings(lines) {
+    const g = lines.map(s => Array.from(s).map(ch => (ch === '#' ? 1 : 0)));
+    const m = new Maze(g.length, g[0].length, g); m.grid[0][0] = 0; m.grid[m.rows - 1][m.cols - 1] = 0; return m;
+  }
+}
+
+class Solver {
+  constructor(maze) {
+    this.maze = maze;
+    this.visited = new Uint8Array(maze.rows * maze.cols);
+    this.stack = [[0, 0, 0]];
+    this.visited[0] = 1;
+    this.visitedCount = 1; this.steps = 0; this.backtracks = 0; this.maxDepth = 1;
+    this.finished = false; this.found = false;
+    this.message = 'Sẵn sàng tìm đường';
+  }
+  isVisited(r, c) { return this.visited[r * this.maze.cols + c] === 1; }
+  /* Đúng một thao tác của thuật toán. Trả về mô tả thao tác để giao diện hiển thị. */
+  step() {
+    if (this.finished) return null;
+    const m = this.maze;
+    this.steps++;
+    const cur = this.stack[this.stack.length - 1];
+    const [row, col, di] = cur;
+    if (row === m.goal[0] && col === m.goal[1]) {
+      this.finished = true; this.found = true; this.message = 'Đã tìm thấy lối thoát!';
+      return { type: 'goal', r: row, c: col };
+    }
+    if (di >= 4) {
+      this.stack.pop(); this.backtracks++;
+      if (!this.stack.length) {
+        this.finished = true; this.found = false; this.message = 'Không tìm thấy đường thoát.';
+        return { type: 'fail', r: row, c: col };
+      }
+      this.message = 'Ngõ cụt, quay lui';
+      return { type: 'pop', r: row, c: col };
+    }
+    const [dr, dc, name] = DIRS[di];
+    cur[2]++;
+    const nr = row + dr, nc = col + dc;
+    const inside = nr >= 0 && nr < m.rows && nc >= 0 && nc < m.cols;
+    if (inside && m.grid[nr][nc] === 0 && !this.visited[nr * m.cols + nc]) {
+      this.visited[nr * m.cols + nc] = 1; this.visitedCount++;
+      this.stack.push([nr, nc, 0]);
+      if (this.stack.length > this.maxDepth) this.maxDepth = this.stack.length;
+      this.message = 'Di chuyển: ' + name;
+      return { type: 'move', r: row, c: col, nr, nc, dir: di, name };
+    }
+    this.message = 'Thử hướng ' + name + ': không hợp lệ';
+    return { type: 'blocked', r: row, c: col, nr, nc, dir: di, name, inside };
+  }
+  runToEnd() { let g = this.maze.rows * this.maze.cols * 8 + 8; while (!this.finished && g-- > 0) this.step(); return this; }
+}
+
+/* BFS: độ dài (số ô) đường ngắn nhất, để so sánh với đường của Quay lui */
+function bfsShortest(m) {
+  const R = m.rows, C = m.cols, dist = new Int32Array(R * C).fill(-1), q = [0];
+  dist[0] = 1;
+  for (let h = 0; h < q.length; h++) {
+    const id = q[h], r = (id / C) | 0, c = id % C;
+    if (r === m.goal[0] && c === m.goal[1]) return dist[id];
+    for (const [dr, dc] of DIRS) {
+      const nr = r + dr, nc = c + dc;
+      if (nr >= 0 && nr < R && nc >= 0 && nc < C && m.grid[nr][nc] === 0 && dist[nr * C + nc] < 0) {
+        dist[nr * C + nc] = dist[id] + 1; q.push(nr * C + nc);
+      }
+    }
+  }
+  return -1;
+}
+
+/* Đối chứng: quay lui thuần, chỉ đánh dấu các ô nằm trên đường đang đi (bỏ đánh dấu khi lùi).
+   Đếm số lần "đi vào một ô" (push). Dừng khi vượt cap. */
+function pureBacktrackPushes(m, cap) {
+  const R = m.rows, C = m.cols, onPath = new Uint8Array(R * C), st = [[0, 0, 0]];
+  onPath[0] = 1; let pushes = 1;
+  while (st.length) {
+    const cur = st[st.length - 1];
+    if (cur[0] === m.goal[0] && cur[1] === m.goal[1]) return { pushes, found: true, capped: false };
+    if (cur[2] >= 4) { onPath[cur[0] * C + cur[1]] = 0; st.pop(); continue; }
+    const [dr, dc] = DIRS[cur[2]++];
+    const nr = cur[0] + dr, nc = cur[1] + dc;
+    if (nr >= 0 && nr < R && nc >= 0 && nc < C && m.grid[nr][nc] === 0 && !onPath[nr * C + nc]) {
+      onPath[nr * C + nc] = 1; st.push([nr, nc, 0]); pushes++;
+      if (pushes > cap) return { pushes, found: false, capped: true };
+    }
+  }
+  return { pushes, found: false, capped: false };
+}
+
+
+</script>
+<script>
+(function () {
+'use strict';
+const $ = s => document.querySelector(s);
+const nf = new Intl.NumberFormat('vi-VN');
+const nf1 = new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 2, minimumFractionDigits: 2 });
+const fmt = n => nf.format(n);
+const reduceMotion = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---------- Bảng màu bàn cờ (giống giao diện Pygame, cố định ở cả hai chế độ sáng/tối) ---------- */
+const B = { bg: '#0d182c', wall: '#2f4260', floor: '#dee9f7', dead: '#e6b3ba', path: '#3aaae6', cur: '#ffd352', sol: '#2ccd91', start: '#2abe87', goal: '#f59d4b', ink: '#ffffff' };
+
+function sizeCanvas(cv, w, h) {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+  cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
+  cv.style.width = w + 'px'; cv.style.height = h + 'px';
+  const ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); return ctx;
+}
+function paintMaze(ctx, maze, solver, o) {
+  const cell = o.cell, gap = cell >= 12 ? 2 : (cell >= 6 ? 1 : 0), R = maze.rows, C = maze.cols;
+  const inStack = new Uint8Array(R * C);
+  if (solver) for (const s of solver.stack) inStack[s[0] * C + s[1]] = 1;
+  const top = solver && solver.stack.length ? solver.stack[solver.stack.length - 1] : null;
+  const rr = cell >= 12 && ctx.roundRect;
+  for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) {
+    let col;
+    if (maze.grid[r][c] === 1) col = B.wall;
+    else if (solver && inStack[r * C + c]) col = solver.found ? B.sol : B.path;
+    else if (solver && o.dead && solver.isVisited(r, c)) col = B.dead;
+    else col = B.floor;
+    if (top && !solver.found && r === top[0] && c === top[1]) col = B.cur;
+    if (r === maze.start[0] && c === maze.start[1]) col = B.start;
+    else if (r === maze.goal[0] && c === maze.goal[1]) col = B.goal;
+    ctx.fillStyle = col;
+    const x = o.x + c * cell, y = o.y + r * cell;
+    if (rr) { ctx.beginPath(); ctx.roundRect(x, y, cell - gap, cell - gap, 3); ctx.fill(); }
+    else ctx.fillRect(x, y, cell - gap, cell - gap);
+  }
+  if (cell >= 20) {
+    ctx.fillStyle = B.ink; ctx.font = '700 ' + Math.floor(cell * .5) + 'px "JetBrains Mono",monospace';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('S', o.x + cell / 2 - 1, o.y + cell / 2);
+    ctx.fillText('E', o.x + (maze.goal[1]) * cell + cell / 2 - 1, o.y + maze.goal[0] * cell + cell / 2);
+  }
+}
+function drawFit(cv, maze, solver, availW, maxCell, dead, availH) {
+  let cell = Math.max(4, Math.min(Math.floor(availW / maze.cols), maxCell));
+  if (availH) cell = Math.max(4, Math.min(cell, Math.floor(availH / maze.rows)));
+  const w = cell * maze.cols, h = cell * maze.rows;
+  const ctx = sizeCanvas(cv, w, h); ctx.clearRect(0, 0, w, h);
+  paintMaze(ctx, maze, solver, { cell, x: 0, y: 0, dead });
+  return cell;
+}
+
+/* ---------- Dữ liệu mẫu ---------- */
+const SAMPLES = [
+  { id: 's1', name: 'Mẫu 1 · Đường thẳng', desc: 'Trường hợp tốt nhất: lối đi chạy dọc cạnh trên rồi xuống cạnh phải.',
+    make: () => Maze.fromStrings(['.......', '######.', '######.', '######.', '######.', '######.', '######.']) },
+  { id: 's2', name: 'Mẫu 2 · Đường rắn', desc: 'Một lối duy nhất ngoằn ngoèo, Stack phải chứa gần như toàn bộ ô trống.',
+    make: () => Maze.fromStrings(['.........', '########.', '.........', '.########', '.........', '########.', '.........', '.########', '.........']) },
+  { id: 's3', name: 'Mẫu 3 · Không có lối thoát', desc: 'Bức tường dọc chia mê cung làm đôi, đích nằm ở phần không tới được.',
+    make: () => Maze.fromStrings(Array.from({ length: 9 }, () => '....#....')) },
+  { id: 's4', name: 'Mẫu 4 · Ngẫu nhiên 17×21', desc: 'Sinh như bản Pygame (27% tường), hạt giống 2026.',
+    make: () => Maze.random(17, 21, mulberry32(2026)) },
+  { id: 's5', name: 'Mẫu 5 · Hoàn hảo 21×21', desc: 'Cây khung: giữa hai ô chỉ có một đường, nhiều ngõ cụt. Hạt giống 7.',
+    make: () => Maze.perfect(21, 21, mulberry32(7)) },
+  { id: 's6', name: 'Mẫu 6 · Ngẫu nhiên 31×35', desc: 'Kích thước tối đa của bản Pygame. Hạt giống 99.',
+    make: () => Maze.random(31, 35, mulberry32(99)) },
+];
+const sampleById = id => SAMPLES.find(s => s.id === id);
+
+/* ---------- Ảnh minh họa đầu trang ---------- */
+(function hero() {
+  const cv = $('#heroCanvas'), cap = $('#heroCap'); let seed = 15, maze, solver, wait = 0, acc = 0, last = 0, cell = 20;
+  function fresh() { maze = Maze.perfect(15, 15, mulberry32(seed++)); solver = new Solver(maze); wait = 0; }
+  function size() { const w = cv.parentElement.clientWidth - 28; cell = Math.max(8, Math.floor(w / 15)); }
+  function draw() { const w = cell * 15; const ctx = sizeCanvas(cv, w, w); paintMaze(ctx, maze, solver, { cell, x: 0, y: 0, dead: true }); }
+  fresh(); size();
+  if (reduceMotion) { solver.runToEnd(); draw(); cap.textContent = 'Đã tìm thấy lối thoát'; return; }
+  function loop(t) {
+    requestAnimationFrame(loop);
+    const dt = Math.min((t - last) / 1000, .1); last = t;
+    if (document.hidden) return;
+    if (solver.finished) { wait += dt; if (wait > 1.6) fresh(); }
+    else { acc += dt * 46; let n = Math.floor(acc); acc -= n; while (n-- > 0 && !solver.finished) solver.step(); }
+    cap.textContent = solver.finished ? 'Đã tìm thấy lối thoát · ' + solver.steps + ' bước' : 'Đang dò đường · Stack sâu ' + solver.stack.length;
+    draw();
+  }
+  new ResizeObserver(() => { size(); draw(); }).observe(cv.parentElement);
+  requestAnimationFrame(loop);
+})();
+
+/* ---------- Bảng chạy tay 4×4 ---------- */
+(function trace() {
+  const m = Maze.fromStrings(['..#.', '#...', '..#.', '.#..']);
+  const s = new Solver(m), rows = [];
+  rows.push(['0', 'Khởi tạo: push S', '(0, 0, d=0)', 1]);
+  while (!s.finished) {
+    const before = s.stack.map(x => x.slice()), a = s.step();
+    const top = s.stack.length ? s.stack[s.stack.length - 1] : null;
+    let act = '';
+    if (a.type === 'move') act = 'Đi ' + a.name + ' tới (' + a.nr + ', ' + a.nc + ') · push';
+    else if (a.type === 'blocked') act = 'Thử ' + a.name + ': ' + (a.inside ? 'tường hoặc đã thăm' : 'ngoài lưới');
+    else if (a.type === 'pop') act = 'Hết hướng tại (' + a.r + ', ' + a.c + ') · pop';
+    else if (a.type === 'goal') act = 'Đỉnh Stack là E: thành công';
+    else act = 'Stack rỗng: thất bại';
+    rows.push([String(s.steps), act, top ? '(' + top[0] + ', ' + top[1] + ', d=' + top[2] + ')' : '—', s.stack.length]);
+  }
+  $('#traceTable tbody').innerHTML = rows.map(r => '<tr><td class="r">' + r[0] + '</td><td>' + r[1] + '</td><td class="m">' + r[2] + '</td><td class="r">' + r[3] + '</td></tr>').join('');
+  const cv = $('#traceCanvas');
+  function draw() { const w = cv.parentElement.clientWidth - 20; drawFit(cv, m, s, w, 64, true); }
+  draw(); new ResizeObserver(draw).observe(cv.parentElement);
+})();
+
+/* ---------- Phòng thí nghiệm ---------- */
+const lab = { maze: null, solver: null, auto: false, kind: 's4', rows: 17, cols: 21, tool: 'none', sps: 30, log: [], hl: 1, bfs: null, dead: true, edited: false };
+const cv = $('#labCanvas');
+let labCell = 24;
+
+function sizeLabel() { $('#bSize').textContent = lab.maze.rows + '×' + lab.maze.cols; }
+function newSolver(msg) {
+  lab.solver = new Solver(lab.maze); lab.auto = false; lab.log = []; lab.hl = 1; lab.bfs = null;
+  lab.solver.message = msg || 'Đã khởi tạo Stack tại S.'; render();
+}
+function loadKind(kind, fresh) {
+  lab.kind = kind;
+  const smp = sampleById(kind);
+  if (smp) lab.maze = smp.make();
+  else {
+    const rng = mulberry32((Math.random() * 2 ** 31) | 0);
+    lab.maze = kind === 'perfect' ? Maze.perfect(lab.rows, lab.cols, rng) : Maze.random(lab.rows, lab.cols, rng);
+  }
+  lab.rows = lab.maze.rows; lab.cols = lab.maze.cols; sizeLabel();
+  newSolver(fresh ? 'Đã tạo mê cung mới.' : 'Đã nạp mê cung. Bấm Chạy để bắt đầu.');
+}
+function logAdd(n, a) {
+  let t = '', cls = a.type;
+  if (a.type === 'move') t = 'Đi ' + a.name + ' tới (' + a.nr + ',' + a.nc + ') · push';
+  else if (a.type === 'blocked') t = 'Thử ' + a.name + ': ' + (a.inside ? 'tường/đã thăm' : 'ngoài lưới');
+  else if (a.type === 'pop') t = 'Ngõ cụt (' + a.r + ',' + a.c + ') · pop';
+  else if (a.type === 'goal') t = 'Tới đích E';
+  else t = 'Stack rỗng';
+  lab.log.unshift({ n, t, cls }); if (lab.log.length > 40) lab.log.pop();
+}
+const LINE = { move: 7, blocked: 6, pop: 5, goal: 4, fail: 8 };
+function doStep() {
+  const s = lab.solver; if (!s || s.finished) return;
+  const a = s.step(); if (!a) return;
+  logAdd(s.steps, a); lab.hl = LINE[a.type];
+  if (s.finished) { lab.auto = false; lab.bfs = bfsShortest(lab.maze); }
+}
+
+function render() {
+  const s = lab.solver, m = lab.maze; if (!s || !m) return;
+  const wrap = cv.parentElement, availW = Math.max(120, wrap.clientWidth - 24);
+  labCell = drawFit(cv, m, s, availW, 34, lab.dead, 640);
+  // thống kê
+  const V = m.openCount(), bound = 5 * V + 1;
+  $('#sSteps').textContent = fmt(s.steps); $('#sVis').textContent = fmt(s.visitedCount);
+  $('#sBack').textContent = fmt(s.backtracks); $('#sDepth').textContent = fmt(s.stack.length);
+  $('#mBar').style.width = Math.min(100, s.steps / bound * 100).toFixed(1) + '%';
+  $('#mR').textContent = fmt(s.steps) + ' / ' + fmt(bound) + '  (V = ' + fmt(V) + ')';
+  // stack
+  const st = s.stack, sv = $('#stackView'); let h = '';
+  if (!st.length) h = '<div class="empty">Stack rỗng</div>';
+  else {
+    const show = Math.min(st.length, 8);
+    for (let i = 0; i < show; i++) {
+      const e = st[st.length - 1 - i];
+      h += '<div class="it' + (i === 0 ? ' top' : '') + '"><span>(' + e[0] + ', ' + e[1] + ')' + (i === 0 ? '  ĐỈNH' : '') + '</span><span>d=' + e[2] + '</span></div>';
+    }
+    if (st.length > show) h += '<div class="more">… còn ' + (st.length - show) + ' phần tử bên dưới</div>';
+  }
+  sv.innerHTML = h;
+  // mã giả
+  document.querySelectorAll('#pseudo li').forEach(li => li.classList.toggle('hl', +li.dataset.l === lab.hl));
+  // nhật ký
+  $('#logView').innerHTML = lab.log.slice(0, 9).map(x => '<li class="' + x.cls + '"><b>' + x.n + '</b><span>' + x.t + '</span></li>').join('') || '<li><b>·</b><span>Chưa có thao tác nào.</span></li>';
+  // trạng thái
+  $('#stMsg').textContent = s.message;
+  const res = $('#stRes');
+  if (s.finished) {
+    res.className = 'res ' + (s.found ? 'ok' : 'bad');
+    res.textContent = s.found ? 'THÀNH CÔNG · đường ' + s.stack.length + ' ô · BFS ngắn nhất ' + lab.bfs + ' ô' : 'THẤT BẠI · không có lối thoát';
+  } else { res.className = 'res'; res.textContent = lab.auto ? 'ĐANG CHẠY' : 'TẠM DỪNG'; }
+  $('#bPause').textContent = lab.auto ? 'Tạm dừng' : (s.steps > 0 && !s.finished ? 'Tiếp tục' : 'Tạm dừng');
+  $('#bPause').disabled = s.finished; $('#bStep').disabled = false; $('#bEnd').disabled = s.finished;
+}
+
+// vòng lặp tự động
+(function loop() {
+  let last = performance.now(), acc = 0;
+  function f(t) {
+    requestAnimationFrame(f);
+    const dt = Math.min((t - last) / 1000, .1); last = t;
+    if (!lab.auto || !lab.solver || lab.solver.finished || document.hidden) { acc = 0; return; }
+    acc += dt * lab.sps; let n = Math.min(Math.floor(acc), 3000); acc -= n;
+    while (n-- > 0 && !lab.solver.finished) doStep();
+    render();
+  }
+  requestAnimationFrame(f);
+})();
+
+// nút điều khiển
+$('#bRun').onclick = () => { if (lab.solver.finished || lab.edited) { newSolver(); lab.edited = false; } lab.auto = true; lab.solver.message = 'Đang chạy thuật toán…'; render(); };
+$('#bStep').onclick = () => { if (lab.solver.finished) newSolver(); lab.auto = false; doStep(); render(); };
+$('#bPause').onclick = () => { if (!lab.solver.finished) { lab.auto = !lab.auto; render(); } };
+$('#bEnd').onclick = () => { lab.auto = false; let g = lab.maze.rows * lab.maze.cols * 8 + 8; while (!lab.solver.finished && g-- > 0) doStep(); render(); };
+$('#bReset').onclick = () => newSolver();
+$('#bNew').onclick = () => { const k = sampleById(lab.kind) ? 'random' : lab.kind; $('#selMaze').value = k; loadKind(k, true); };
+$('#selMaze').onchange = e => loadKind(e.target.value, !sampleById(e.target.value));
+function resize(d) {
+  const k = sampleById(lab.kind) ? 'random' : lab.kind; $('#selMaze').value = k;
+  lab.rows = Math.max(7, Math.min(31, lab.rows + d)); lab.cols = Math.max(7, Math.min(35, lab.cols + d)); loadKind(k, true);
+}
+$('#bMinus').onclick = () => resize(-2); $('#bPlus').onclick = () => resize(2);
+function setTool(t) { lab.tool = t; [['tNone', 'none'], ['tWall', 'wall'], ['tErase', 'erase']].forEach(([id, k]) => $('#' + id).classList.toggle('on', k === t)); cv.style.cursor = t === 'none' ? 'default' : 'crosshair'; }
+$('#tNone').onclick = () => setTool('none'); $('#tWall').onclick = () => setTool('wall'); $('#tErase').onclick = () => setTool('erase');
+function spdUpdate() { lab.sps = Math.round(2 * Math.pow(1.07, +$('#rngSpeed').value)); $('#spdLbl').textContent = fmt(lab.sps) + ' bước/s'; }
+$('#rngSpeed').oninput = spdUpdate; spdUpdate();
+$('#chkDead').onchange = e => { lab.dead = e.target.checked; render(); };
+
+// vẽ tường bằng chuột / cảm ứng
+let painting = false;
+function paintAt(ev) {
+  if (lab.tool === 'none') return;
+  const rect = cv.getBoundingClientRect(), c = Math.floor((ev.clientX - rect.left) / labCell), r = Math.floor((ev.clientY - rect.top) / labCell);
+  const m = lab.maze; if (r < 0 || c < 0 || r >= m.rows || c >= m.cols) return;
+  if ((r === 0 && c === 0) || (r === m.rows - 1 && c === m.cols - 1)) return;
+  const v = lab.tool === 'wall' ? 1 : 0; if (m.grid[r][c] === v) return;
+  m.grid[r][c] = v; lab.solver = new Solver(m); lab.auto = false; lab.log = []; lab.hl = 1; lab.bfs = null;
+  lab.solver.message = 'Đã chỉnh sửa mê cung. Bấm Chạy để tìm đường.'; render();
+}
+cv.addEventListener('pointerdown', e => { if (lab.tool === 'none') return; painting = true; cv.setPointerCapture(e.pointerId); paintAt(e); });
+cv.addEventListener('pointermove', e => { if (painting) paintAt(e); });
+cv.addEventListener('pointerup', () => { painting = false; }); cv.addEventListener('pointercancel', () => { painting = false; });
+new ResizeObserver(() => render()).observe(cv.parentElement);
+
+// trạng thái khởi đầu: đã chạy sẵn 140 bước để thấy Stack và ngõ cụt
+loadKind('s4', false);
+for (let i = 0; i < 140 && !lab.solver.finished; i++) doStep();
+lab.solver.message = 'Đã chạy sẵn 140 bước. Bấm Chạy hoặc Bước tiếp để tiếp tục.'; render();
+
+/* ---------- Thực nghiệm 7.1: dữ liệu mẫu ---------- */
+(function samples() {
+  const cards = [], rows = [];
+  const results = SAMPLES.map(s => {
+    const m = s.make(), V = m.openCount(), sol = new Solver(m).runToEnd(), bfs = bfsShortest(m);
+    const reps = Math.max(5, Math.floor(2e5 / (m.rows * m.cols))); const t0 = performance.now();
+    for (let i = 0; i < reps; i++) new Solver(m).runToEnd();
+    const us = (performance.now() - t0) / reps * 1000;
+    return { s, m, V, sol, bfs, us };
+  });
+  const host = $('#sampleCards');
+  results.forEach(({ s, m, V, sol, bfs }) => {
+    const d = document.createElement('div'); d.className = 'sample';
+    d.innerHTML = '<div class="thumb"><canvas></canvas></div><h4>' + s.name + '</h4><div class="meta">' + m.rows + '×' + m.cols + ' · ' + (sol.found ? 'đường ' + sol.stack.length + ' ô' : 'không có lối thoát') + ' · ' + fmt(sol.steps) + ' bước</div><p style="font-size:13.5px;color:var(--ink-2);margin:0">' + s.desc + '</p><button class="btn" data-id="' + s.id + '">Mở trong mô phỏng</button>';
+    host.appendChild(d);
+    const c = d.querySelector('canvas'), box = d.querySelector('.thumb');
+    const draw = () => drawFit(c, m, sol, box.clientWidth - 16, 40, true, box.clientHeight - 16);
+    draw(); new ResizeObserver(draw).observe(box);
+    d.querySelector('button').onclick = () => { $('#selMaze').value = s.id; loadKind(s.id, false); document.getElementById('chuong-trinh').scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth' }); };
+  });
+  $('#sampleTable tbody').innerHTML = results.map(({ s, m, V, sol, bfs, us }) =>
+    '<tr><td>' + s.name.replace(' · ', ' · ') + '</td><td class="m">' + m.rows + '×' + m.cols + '</td><td class="r">' + fmt(V) + '</td><td>' +
+    (sol.found ? '<span class="pill ok">Thành công</span>' : '<span class="pill bad">Thất bại</span>') +
+    '</td><td class="r">' + fmt(sol.steps) + '</td><td class="r">' + fmt(5 * V + 1) + '</td><td class="r">' + fmt(sol.visitedCount) + '</td><td class="r">' + fmt(sol.backtracks) +
+    '</td><td class="r">' + fmt(sol.maxDepth) + '</td><td class="r">' + (sol.found ? fmt(sol.stack.length) : '—') + '</td><td class="r">' + (bfs > 0 ? fmt(bfs) : '—') + '</td><td class="r">' + fmt(Math.round(us)) + ' µs</td></tr>').join('');
+  const longer = results.filter(r => r.sol.found && r.sol.stack.length > r.bfs);
+  const worst = results.find(r => !r.sol.found);
+  const txt = [];
+  if (worst) txt.push('Ở mẫu 3 (không có lối thoát), thuật toán thăm ' + fmt(worst.sol.visitedCount) + ' ô đến được và dùng <b>' + fmt(worst.sol.steps) + '</b> bước, ' + (worst.sol.steps === 5 * worst.sol.visitedCount ? 'bằng đúng 5 × ' + fmt(worst.sol.visitedCount) + ' (khớp lý thuyết).' : '.'));
+  if (longer.length) txt.push('Ở ' + longer.map(r => r.s.name.split(' · ')[0].toLowerCase()).join(', ') + ', đường của quay lui dài hơn đường ngắn nhất do BFS tìm được (ví dụ ' + fmt(longer[0].sol.stack.length) + ' so với ' + fmt(longer[0].bfs) + ' ô).');
+  $('#sampleNote').innerHTML = txt.join(' ');
+  window.__samples = results;
+})();
+
+/* ---------- Thực nghiệm 7.2: theo kích thước ---------- */
+let bench = null;
+(function benchmark() {
+  const sizes = [11, 21, 31, 41, 51, 61, 71, 81, 91, 101], T = 20, out = { random: [], perfect: [] }, tb = [];
+  for (const kind of ['random', 'perfect']) for (const n of sizes) {
+    let sV = 0, sSteps = 0, sVis = 0, sBack = 0, allWithin = true, found = 0;
+    for (let t = 0; t < T; t++) {
+      const rng = mulberry32(n * 1000 + t + (kind === 'perfect' ? 500 : 0));
+      const m = kind === 'random' ? Maze.random(n, n, rng) : Maze.perfect(n, n, rng);
+      const V = m.openCount(), s = new Solver(m).runToEnd();
+      sV += V; sSteps += s.steps; sVis += s.visitedCount; sBack += s.backtracks; if (s.found) found++; if (s.steps > 5 * V + 1) allWithin = false;
+    }
+    const row = { n, V: sV / T, steps: sSteps / T, vis: sVis / T, back: sBack / T, ok: allWithin, found };
+    out[kind].push(row);
+  }
+  // hệ số hồi quy qua gốc: steps ≈ k·V
+  const fit = rows => { let sxy = 0, sxx = 0; rows.forEach(r => { sxy += r.V * r.steps; sxx += r.V * r.V; }); const k = sxy / sxx; let ssr = 0, sst = 0; const mean = rows.reduce((a, r) => a + r.steps, 0) / rows.length; rows.forEach(r => { ssr += (r.steps - k * r.V) ** 2; sst += (r.steps - mean) ** 2; }); return { k, r2: 1 - ssr / sst }; };
+  const fr = fit(out.random), fp = fit(out.perfect);
+  bench = { out, sizes, fr, fp };
+  const all = out.random.concat(out.perfect);
+  const names = { random: 'Ngẫu nhiên', perfect: 'Hoàn hảo' };
+  $('#benchTable tbody').innerHTML = ['random', 'perfect'].flatMap(k => out[k].map(r =>
+    '<tr><td class="m">' + r.n + '×' + r.n + '</td><td class="r">' + names[k] + '</td><td class="r">' + fmt(Math.round(r.V)) + '</td><td class="r">' + fmt(Math.round(r.steps)) + '</td><td class="r">' + fmt(Math.round(r.vis)) + '</td><td class="r">' + nf1.format(r.steps / r.vis) + '</td><td class="r">' + nf1.format(r.steps / r.V) + '</td><td class="r">' + fmt(Math.round(r.back)) + '</td></tr>')).join('');
+  const within = all.every(r => r.ok);
+  $('#chartNote').innerHTML = 'Hai đường thực nghiệm gần như thẳng: số bước ≈ <b>' + nf1.format(fr.k) + '·V</b> với mê cung ngẫu nhiên (R² = ' + nf1.format(fr.r2) + ') và ≈ <b>' + nf1.format(fp.k) + '·V</b> với mê cung hoàn hảo (R² = ' + nf1.format(fp.r2) + '). ' + (within ? 'Trong tất cả ' + (all.length * T) + ' lần chạy, số bước không vượt cận 5V + 1.' : 'Có lần chạy vượt cận 5V + 1.');
+  drawChart();
+})();
+
+function niceTicks(max, n) {
+  const raw = max / n, p = Math.pow(10, Math.floor(Math.log10(raw))), f = raw / p, step = (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * p, t = [];
+  for (let v = 0; v <= max + step * .001; v += step) t.push(v); if (t[t.length - 1] < max) t.push(t[t.length - 1] + step); return t;
+}
+function drawChart() {
+  if (!bench) return;
+  const host = $('#chart'), tip = $('#chartTip'), W = Math.max(280, host.clientWidth || 600), H = Math.round(Math.max(250, Math.min(380, W * .52)));
+  const m = { l: W < 480 ? 52 : 66, r: W < 480 ? 12 : 22, t: 14, b: 44 };
+  const { out } = bench, maxV = Math.max(...out.random.map(r => r.V), ...out.perfect.map(r => r.V));
+  const xt = niceTicks(maxV, W < 480 ? 3 : 5), yt = niceTicks(5 * maxV, 5), xm = xt[xt.length - 1], ym = yt[yt.length - 1];
+  const X = v => m.l + v / xm * (W - m.l - m.r), Y = v => H - m.b - v / ym * (H - m.t - m.b);
+  const S = [
+    { key: 'random', name: 'Ngẫu nhiên (27% tường)', color: 'var(--s1)', pts: out.random.map(r => ({ x: r.V, y: r.steps, n: r.n })) },
+    { key: 'perfect', name: 'Mê cung hoàn hảo', color: 'var(--s2)', pts: out.perfect.map(r => ({ x: r.V, y: r.steps, n: r.n })) },
+  ];
+  let g = '';
+  yt.forEach(v => { g += '<line x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + Y(v) + '" y2="' + Y(v) + '" stroke="var(--grid)" stroke-width="1"/><text x="' + (m.l - 8) + '" y="' + (Y(v) + 4) + '" text-anchor="end">' + fmt(v) + '</text>'; });
+  xt.forEach(v => { g += '<text x="' + X(v) + '" y="' + (H - m.b + 18) + '" text-anchor="middle">' + fmt(v) + '</text>'; });
+  g += '<line x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + Y(0) + '" y2="' + Y(0) + '" stroke="var(--ink-3)" stroke-width="1"/>';
+  g += '<text x="' + ((m.l + W - m.r) / 2) + '" y="' + (H - 6) + '" text-anchor="middle">Số ô trống V</text>';
+  g += '<text transform="translate(12 ' + ((m.t + H - m.b) / 2) + ') rotate(-90)" text-anchor="middle">Số bước</text>';
+  // cận trên 5V
+  const bx = Math.min(xm, ym / 5);
+  g += '<line x1="' + X(0) + '" y1="' + Y(0) + '" x2="' + X(bx) + '" y2="' + Y(5 * bx) + '" stroke="var(--ink-3)" stroke-width="2" stroke-dasharray="6 5"/>';
+  S.forEach(s => {
+    g += '<polyline fill="none" stroke="' + s.color + '" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" points="' + s.pts.map(p => X(p.x) + ',' + Y(p.y)).join(' ') + '"/>';
+    s.pts.forEach((p, i) => { g += '<circle data-i="' + i + '" cx="' + X(p.x) + '" cy="' + Y(p.y) + '" r="4" fill="' + s.color + '" stroke="var(--surface)" stroke-width="2"/>'; });
+  });
+  // nhãn trực tiếp ở cuối đường, tránh chồng nhau
+  const ends = S.map(s => { const p = s.pts[s.pts.length - 1]; return { s, x: X(p.x), y: Y(p.y) }; }).sort((a, b) => a.y - b.y);
+  if (ends.length === 2 && ends[1].y - ends[0].y < 16) ends[0].y = ends[1].y - 16;
+  ends.forEach(e => { g += '<text x="' + (e.x - 8) + '" y="' + (e.y - 10) + '" text-anchor="end" style="fill:var(--ink)">' + e.s.name.split(' (')[0] + '</text>'; });
+  g += '<text x="' + (X(bx * .56)) + '" y="' + (Y(5 * bx * .56) - 12) + '" text-anchor="middle" transform="rotate(' + (-Math.atan2(Y(0) - Y(5 * bx), X(bx) - X(0)) * 180 / Math.PI) + ' ' + X(bx * .56) + ' ' + (Y(5 * bx * .56) - 12) + ')">cận trên 5V + 1</text>';
+  g += '<line id="xh" x1="0" x2="0" y1="' + m.t + '" y2="' + (H - m.b) + '" stroke="var(--ink-3)" stroke-width="1" style="display:none"/><rect id="hit" x="' + m.l + '" y="' + m.t + '" width="' + (W - m.l - m.r) + '" height="' + (H - m.t - m.b) + '" fill="transparent"/>';
+  host.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" role="img" aria-label="Biểu đồ số bước theo số ô trống">' + g + '</svg>';
+  $('#chartLegend').innerHTML = S.map(s => '<span><i style="border-top-color:' + s.color + '"></i>' + s.name + ' ≈ ' + nf1.format(bench[s.key === 'random' ? 'fr' : 'fp'].k) + '·V</span>').join('') + '<span><i class="d"></i>Cận trên 5V + 1</span>';
+  const svg = host.querySelector('svg'), xh = svg.querySelector('#xh'), hit = svg.querySelector('#hit'), box = host.parentElement;
+  function show(ev) {
+    const rect = svg.getBoundingClientRect(), px = (ev.clientX - rect.left) * (W / rect.width);
+    let best = 0, bd = 1e9;
+    S.forEach(s => s.pts.forEach((p, i) => { const d = Math.abs(X(p.x) - px); if (d < bd) { bd = d; best = i; } }));
+    const p0 = S[0].pts[best], p1 = S[1].pts[best], xx = (X(p0.x) + X(p1.x)) / 2;
+    xh.setAttribute('x1', xx); xh.setAttribute('x2', xx); xh.style.display = '';
+    svg.querySelectorAll('circle').forEach(c => c.setAttribute('r', +c.dataset.i === best ? 6 : 4));
+    tip.innerHTML = '<b>Mê cung ' + p0.n + '×' + p0.n + '</b>' + S.map(s => '<div class="row"><span><i class="sw" style="background:' + s.color + '"></i>' + s.name.split(' (')[0] + '</span><span class="num">V = ' + fmt(Math.round(s.pts[best].x)) + ' · ' + fmt(Math.round(s.pts[best].y)) + ' bước</span></div>').join('');
+    const br = box.getBoundingClientRect(); let left = ev.clientX - br.left + 14, top = ev.clientY - br.top - 20;
+    if (left + 220 > br.width) left = ev.clientX - br.left - 234; tip.style.left = Math.max(4, left) + 'px'; tip.style.top = Math.max(4, top) + 'px'; tip.style.opacity = 1;
+  }
+  function hide() { xh.style.display = 'none'; tip.style.opacity = 0; svg.querySelectorAll('circle').forEach(c => c.setAttribute('r', 4)); }
+  hit.addEventListener('pointermove', show); hit.addEventListener('pointerdown', show); hit.addEventListener('pointerleave', hide);
+}
+new ResizeObserver(() => drawChart()).observe($('#chart'));
+
+/* ---------- Thực nghiệm 7.3: đối chứng ---------- */
+(function pure() {
+  const body = $('#pureTable tbody'), done = {};
+  function row(n) {
+    const m = new Maze(n, n); m.grid[n - 2][n - 1] = 1; m.grid[n - 1][n - 2] = 1;
+    const V = m.openCount(), a = new Solver(m).runToEnd(), cap = 2e7, b = pureBacktrackPushes(m, cap);
+    const val = b.capped ? '> ' + fmt(cap) + ' (dừng)' : fmt(b.pushes);
+    const ratio = b.capped ? '> ' + fmt(Math.round(cap / a.steps)) + ' lần' : (b.pushes / a.steps >= 10 ? '≈ ' + fmt(Math.round(b.pushes / a.steps)) + ' lần' : nf1.format(b.pushes / a.steps) + ' lần');
+    return '<tr><td class="m">' + n + '×' + n + '</td><td class="r">' + fmt(V) + '</td><td class="r">' + fmt(a.steps) + '</td><td class="r">' + val + '</td><td class="r">' + ratio + '</td></tr>';
+  }
+  const rows = { 3: row(3), 4: row(4), 5: row(5) };
+  const render = () => { body.innerHTML = Object.keys(rows).sort((a, b) => a - b).map(k => rows[k]).join(''); };
+  render();
+  $('#bPure').onclick = function () {
+    const btn = this; btn.disabled = true; btn.textContent = 'Đang chạy 6×6…';
+    setTimeout(() => { rows[6] = row(6); render(); btn.textContent = 'Đang chạy 7×7…';
+      setTimeout(() => { rows[7] = row(7); render(); btn.textContent = 'Đã chạy xong'; remarks(); }, 30); }, 30);
+  };
+})();
+
+/* ---------- 7.4 nhận xét ---------- */
+function remarks() {
+  const r = [], bn = bench, all = bn.out.random.concat(bn.out.perfect), ok = all.every(x => x.ok);
+  r.push('<b>Khớp lý thuyết.</b> ' + (ok ? 'Trong ' + (all.length * 20) + ' lần chạy ở mục 7.2, không lần nào vượt cận 5V + 1. ' : '') + 'Số bước tăng tuyến tính theo V (R² từ ' + nf1.format(Math.min(bn.fr.r2, bn.fp.r2)) + ' trở lên), và mẫu 3 đạt đúng 5 × 36 = 180 bước.');
+  r.push('<b>Hệ số khác nhau theo loại mê cung.</b> Mê cung ngẫu nhiên có nhiều lối đi nên thuật toán thường tới đích sớm, khoảng ' + nf1.format(bn.fr.k) + '·V bước. Mê cung hoàn hảo chỉ có một đường nên phải vào nhiều ngõ cụt trước khi tìm ra, khoảng ' + nf1.format(bn.fp.k) + '·V bước. Cả hai đều dưới cận 5V.');
+  r.push('<b>Đường không ngắn nhất.</b> Ở mê cung có chu trình, đường do Stack giữ có thể dài hơn đường BFS (mẫu 6: 131 ô so với 65 ô). Mê cung hoàn hảo chỉ có một đường nên hai giá trị bằng nhau (mẫu 5).');
+  r.push('<b>Stack sâu nhất ở mê cung rắn.</b> Mẫu 2 có độ sâu Stack bằng đúng số ô trống (49), khớp cận bộ nhớ O(R·C). Đây cũng là lý do bản đệ quy trong Python dễ gặp <code>RecursionError</code> với mê cung lớn.');
+  r.push('<b><code>visited</code> toàn cục là thiết yếu.</b> Trên lưới 5×5 bị bịt đích, quay lui thuần vào ô 22.361 lần so với 110 bước (gấp khoảng 200 lần). Ở lưới 6×6 con số là 4.951.201 so với 165 (gấp khoảng 30.000 lần), và ở lưới 7×7 quay lui thuần vượt 20 triệu lần vào ô trong khi bản có <code>visited</code> chỉ cần 230 bước.');
+  $('#remarks').innerHTML = r.map(x => '<li>' + x + '</li>').join('');
+}
+remarks();
+})();
+</script>
+<script>
+/* Mermaid được viewer hiển thị sẵn; không cần nạp thêm thư viện. */
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+<script>try{mermaid.initialize({startOnLoad:true,theme:matchMedia("(prefers-color-scheme: dark)").matches?"dark":"default"})}catch(e){}</script>
+</body>
+</html>
